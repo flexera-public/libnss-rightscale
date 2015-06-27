@@ -1,0 +1,15 @@
+Source: libnss-socket
+Section: admin
+Priority: optional
+Maintainer: Gleb Golubitsky <sectoid@gnolltech.org>
+Build-Depends: debhelper (>= 7), autotools-dev
+Standards-Version: 3.8.0
+Homepage: http://libnss-socket.tuxfamily.org
+
+Package: libnss-socket
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: NSS module for SQLite
+ This package provides a Name Service Switch module that allows you
+ to store users in a SQLite databased.
+

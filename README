@@ -1,0 +1,30 @@
+ INSTALLATION
+===============
+
+This file explains post compilation steps. It assumes that libnss-socket
+is compiled and in system libraries directory (/lib).
+
+
+ 1. Open Unix-Domain Sockets
+-----------------------------
+
+TODO
+
+ 2. Configure nsswitch.conf
+----------------------------
+
+The second step is to tell glibc that we use this lib. Open /etc/nsswitch.conf
+and add sqlite at the end of the passwd, groups and shadow lines. You should
+obtain something like :
+
+# ...
+passwd:         compat socket
+group:          compat socket
+shadow:         compat socket
+# ...
+
+ 3. Test
+---------
+
+TODO
+
