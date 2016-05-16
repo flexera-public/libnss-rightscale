@@ -2,24 +2,24 @@
 # Process this file with autoconf to produce a configure script.
 
 AC_PREREQ(2.61)
-AC_INIT([libnss-socket], [0.1])
+AC_INIT([libnss-rightscale], [0.1])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([utils.h])
 AC_CONFIG_HEADER([config.h])
 AC_PREFIX_DEFAULT([])
 
-AC_ARG_WITH(passwd-sock,
-    AC_HELP_STRING([--with-passwd-sock],
-            [Specify passwd socket location, defaults to /var/run/nss/passwd.sock]),
-    AC_DEFINE_UNQUOTED([NSS_SOCKET_PASSWD_SOCK], ["$withval"], [Passwd socket]),
-    AC_DEFINE([NSS_SOCKET_PASSWD_SOCK], ["/var/run/nss/passwd.sock"], [Passwd socket]))
-
-AC_ARG_WITH(shadow-sock,
-    AC_HELP_STRING([--with-shadow-sock],
-            [Specify shadow socket location (for verifying users' passwords), defaults
-    to /var/run/nss/shadow.sock]),
-    AC_DEFINE_UNQUOTED([NSS_SOCKET_SHADOW_SOCK], ["$withval"], [Shadow socket]),
-    AC_DEFINE([NSS_SOCKET_SHADOW_SOCK], ["/var/run/nss/shadow.sock"], [Shadow socket]))
+# AC_ARG_WITH(passwd-sock,
+#     AC_HELP_STRING([--with-passwd-sock],
+#             [Specify passwd rightscale location, defaults to /var/run/nss/passwd.sock]),
+#     AC_DEFINE_UNQUOTED([NSS_SOCKET_PASSWD_SOCK], ["$withval"], [Passwd rightscale]),
+#     AC_DEFINE([NSS_SOCKET_PASSWD_SOCK], ["/var/run/nss/passwd.sock"], [Passwd rightscale]))
+# 
+# AC_ARG_WITH(shadow-sock,
+#     AC_HELP_STRING([--with-shadow-sock],
+#             [Specify shadow rightscale location (for verifying users' passwords), defaults
+#     to /var/run/nss/shadow.sock]),
+#     AC_DEFINE_UNQUOTED([NSS_SOCKET_SHADOW_SOCK], ["$withval"], [Shadow rightscale]),
+#     AC_DEFINE([NSS_SOCKET_SHADOW_SOCK], ["/var/run/nss/shadow.sock"], [Shadow rightscale]))
 
 
 

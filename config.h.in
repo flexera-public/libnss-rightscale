@@ -72,12 +72,6 @@
    */
 #undef LT_OBJDIR
 
-/* Passwd socket */
-#undef NSS_SOCKET_PASSWD_SOCK
-
-/* Shadow socket */
-#undef NSS_SOCKET_SHADOW_SOCK
-
 /* Name of package */
 #undef PACKAGE
 

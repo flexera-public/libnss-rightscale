@@ -1,24 +1,6 @@
-libnss-socket (0.2+gnoll3) lenny; urgency=low
+libnss-socket (0.1+gnoll3) lenny; urgency=low
 
-  * Fixing prefix from /usr -> /
+  * Initial build
 
- -- Gleb Golubitsky <sectoid@gnolltech.org>  Sun, 08 Aug 2010 00:53:50 +0300
-
-libnss-socket (0.2+gnoll2) lenny; urgency=low
-
-  [Gleb Golubitsky]  
-  * Fixing distribution name  
-  * Maintainer changed to me ;)
-
- -- Gleb Golubitsky <sectoid@gnolltech.org>  Sun, 08 Aug 2010 00:44:40 +0300
-
-libnss-socket (0.2+gnoll1) stable; urgency=low
-
-  [Sébastien Le Ray]
-  * Initial Release.
-  
-  [Gleb Golubitsky]  
-  * Initial build for Lenny
-
- -- Gleb Golubitsky <sectoid@gnolltech.org>  Sun, 08 Aug 2010 00:25:07 +0300
+ -- Peter Schroeter <peter.schroeter@rightscale.com>  Thur, 12 May 2016 00:53:50 +0300
 

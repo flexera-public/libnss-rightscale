@@ -1,30 +1,33 @@
- INSTALLATION
-===============
+libnss-rightlink
+=============
 
-This file explains post compilation steps. It assumes that libnss-socket
-is compiled and in system libraries directory (/lib).
+ABOUT
+------------------
 
+INSTALLATION
+------------------
+1. Ubuntu
+sudo apt-get install -y build-essential autotools-dev autoconf libtool
+./bootstrap
+./configure
+make
 
- 1. Open Unix-Domain Sockets
------------------------------
-
-TODO
-
- 2. Configure nsswitch.conf
-----------------------------
+CONFIGURATION
+------------------
+1. Configure nsswitch.conf
 
 The second step is to tell glibc that we use this lib. Open /etc/nsswitch.conf
 and add sqlite at the end of the passwd, groups and shadow lines. You should
 obtain something like :
 
 # ...
-passwd:         compat socket
-group:          compat socket
-shadow:         compat socket
+passwd:         rightscale compat
+group:          rightscale compat
+shadow:         rightscale compat
 # ...
 
- 3. Test
----------
+TEST
+------------------
 
-TODO
-
+AUTHORS
+------------------

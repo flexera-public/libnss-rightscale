@@ -1,12 +1,12 @@
-#ifndef NSS_SOCKET_H
-#define NSS_SOCKET_H
+#ifndef NSS_RIGHTSCALE_H
+#define NSS_RIGHTSCALE_H
 
 #define _GNU_SOURCE
 
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #else
-#error You must use autotools to build this!
+/* #error You must use autotools to build this! */
 #endif
 
 #include <nss.h>
@@ -15,7 +15,8 @@
 
 /* Some syslog shortcuts */
 #ifdef DEBUG
-#define NSS_DEBUG(msg, ...) syslog(LOG_DEBUG, (msg), ## __VA_ARGS__)
+#define NSS_DEBUG(msg, ...) printf((msg), ## __VA_ARGS__)
+/* #define NSS_DEBUG(msg, ...) syslog(LOG_INFO, (msg), ## __VA_ARGS__) */
 #else
 #define NSS_DEBUG(msg, ...)
 #endif
