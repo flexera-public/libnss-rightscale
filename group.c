@@ -36,31 +36,41 @@ enum nss_status populate_groups(struct group* rs, struct group* rs_sudo) {
     if (fp == NULL) {
         return NSS_STATUS_UNAVAIL;
     }
-    int superuser_index = 0;
-    int user_index = 0;
+    int superuser_count = 0;
+    int user_count = 0;
     int line_no = 1;
     struct passwd* entry;
+    int rs_size = 16; /* initialize size. we'll dynamically reallocate as needed */
+    int rs_sudo_size = 16; /* initialize size. we'll dynamically reallocate as needed */
 
     group_count = 0;
-    rs->gr_mem = malloc(sizeof(char*)*100);
-    rs_sudo->gr_mem = malloc(sizeof(char*)*100);
+    rs->gr_mem = malloc(sizeof(char*)*rs_size);
+    rs_sudo->gr_mem = malloc(sizeof(char*)*rs_sudo_size);
 
     // All users are part of the rightscale group.
     // Only superusers are also part of the rightscale_sudo group.
     while (entry = read_next_policy_entry(fp, &line_no)) {
         if (entry->pw_gid == rs_sudo->gr_gid) {
-            rs_sudo->gr_mem[superuser_index] = malloc(sizeof(char)*(strlen(entry->pw_name) + 1));
-            strcpy(rs_sudo->gr_mem[superuser_index], entry->pw_name);
-            superuser_index++;
+            rs_sudo->gr_mem[superuser_count] = malloc(sizeof(char)*(strlen(entry->pw_name) + 1));
+            strcpy(rs_sudo->gr_mem[superuser_count], entry->pw_name);
+            superuser_count++;
+            if (superuser_count > (rs_sudo_size - 1)) {
+                rs_sudo_size *= 2;
+                rs_sudo->gr_mem = realloc(rs_sudo->gr_mem, rs_sudo_size * sizeof(char*));
+            }
         }
-        rs->gr_mem[user_index] = malloc(sizeof(char)*(strlen(entry->pw_name) + 1));
-        strcpy(rs->gr_mem[user_index], entry->pw_name);
-        user_index++;
+        rs->gr_mem[user_count] = malloc(sizeof(char)*(strlen(entry->pw_name) + 1));
+        strcpy(rs->gr_mem[user_count], entry->pw_name);
+        user_count++;
+        if (user_count > (rs_size - 1)) {
+            rs_size *= 2;
+            rs->gr_mem = realloc(rs->gr_mem, rs_size * sizeof(char*));
+        }
 
         free_passwd(entry);
     }
-    rs_sudo->gr_mem[superuser_index] = NULL;
-    rs->gr_mem[user_index] = NULL;
+    rs_sudo->gr_mem[superuser_count] = NULL;
+    rs->gr_mem[user_count] = NULL;
 
     close_policy_file(fp);
 
