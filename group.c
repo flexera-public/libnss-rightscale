@@ -18,16 +18,16 @@
 static group_count = -1;
 
 static struct group rightscale = {
-    gr_name: "rightscale", 
-    gr_passwd: "x", 
-    gr_gid: 10000, 
+    gr_name: "rightscale",
+    gr_passwd: "x",
+    gr_gid: 10000,
     gr_mem: (char **)NULL
 };
 
 static struct group rightscale_sudo = {
-    gr_name: "rightscale_sudo", 
-    gr_passwd: "x", 
-    gr_gid: 10001, 
+    gr_name: "rightscale_sudo",
+    gr_passwd: "x",
+    gr_gid: 10001,
     gr_mem: (char **)NULL
 };
 
@@ -57,10 +57,10 @@ enum nss_status populate_groups(struct group* rs, struct group* rs_sudo) {
         strcpy(rs->gr_mem[user_index], entry->pw_name);
         user_index++;
 
-        rs_sudo->gr_mem[superuser_index] = NULL;
-        rs->gr_mem[user_index] = NULL;
         free_passwd(entry);
     }
+    rs_sudo->gr_mem[superuser_index] = NULL;
+    rs->gr_mem[user_index] = NULL;
 
     close_policy_file(fp);
 
@@ -74,12 +74,15 @@ void free_groups(struct group* rs, struct group* rs_sudo) {
             free(rs_sudo->gr_mem[i]);
         }
         free(rs_sudo->gr_mem);
+        rs_sudo->gr_mem = NULL;
+
     }
     if (rs->gr_mem != NULL) {
         for(i = 0; rs->gr_mem[i] != NULL; i++) {
             free(rs->gr_mem[i]);
         }
         free(rs->gr_mem);
+        rs->gr_mem = NULL;
     }
 }
 
@@ -151,9 +154,9 @@ enum nss_status _nss_rightscale_getgrnam_r(const char* name, struct group *grbuf
     populate_groups(&rightscale, &rightscale_sudo);
 
     NSS_DEBUG("rightscale getgrnam_r: Looking for group %s\n", name);
-    if (name == rightscale.gr_name) {
+    if (strcmp(name, rightscale.gr_name) == 0) {
         res = fill_group(grbuf, buf, buflen, &rightscale, errnop);
-    } else if (name == rightscale_sudo.gr_name) {
+    } else if (strcmp(name, rightscale_sudo.gr_name) == 0) {
         res = fill_group(grbuf, buf, buflen, &rightscale_sudo, errnop);
     } else {
         res = NSS_STATUS_NOTFOUND;
