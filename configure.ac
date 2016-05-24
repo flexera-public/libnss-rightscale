@@ -6,7 +6,7 @@ AC_INIT([libnss-rightscale], [0.1])
 AM_INIT_AUTOMAKE
 AC_CONFIG_SRCDIR([utils.h])
 AC_CONFIG_HEADER([config.h])
-AC_PREFIX_DEFAULT([])
+AC_PREFIX_DEFAULT([/usr])
 
 # AC_ARG_WITH(passwd-sock,
 #     AC_HELP_STRING([--with-passwd-sock],

@@ -94,9 +94,7 @@ struct passwd* read_next_policy_entry(FILE* fp, int* line_no) {
 
 
 void close_policy_file(FILE* fp) {
-    if(fp != NULL) {
-        fclose(fp);
-    }
+    fclose(fp);
 }
 
 /*

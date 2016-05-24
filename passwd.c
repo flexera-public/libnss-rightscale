@@ -47,7 +47,10 @@ enum nss_status _nss_rightscale_setpwent() {
  */
 enum nss_status _nss_rightscale_endpwent() {
     NSS_DEBUG("rightscale endpwent\n");
-    close_policy_file(pwent_data.fp);
+    if (pwent_data.fp != NULL) {
+        close_policy_file(pwent_data.fp);
+        pwent_data.fp = NULL;
+    }
     return NSS_STATUS_SUCCESS;
 }
 

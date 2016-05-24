@@ -11,6 +11,7 @@ sudo apt-get install -y build-essential autotools-dev autoconf libtool
 ./bootstrap
 ./configure
 make
+sudo make install
 
 CONFIGURATION
 ------------------
@@ -18,12 +19,12 @@ CONFIGURATION
 
 The second step is to tell glibc that we use this lib. Open /etc/nsswitch.conf
 and add sqlite at the end of the passwd, groups and shadow lines. You should
-obtain something like :
+obtain something like:
 
 # ...
-passwd:         rightscale compat
-group:          rightscale compat
-shadow:         rightscale compat
+passwd:         compat rightscale
+group:          compat rightscale
+shadow:         compat
 # ...
 
 TEST
