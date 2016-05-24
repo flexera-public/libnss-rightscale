@@ -12,6 +12,7 @@
 #include <nss.h>
 #include <syslog.h>
 #include <stdio.h>
+#include <pwd.h>
 
 /* Some syslog shortcuts */
 #ifdef DEBUG
@@ -25,5 +26,14 @@
 
 #define FALSE 0
 #define TRUE !FALSE
+
+struct rs_user {
+    char *preferred_name;
+    char *unique_name;
+    uid_t rs_uid;
+    uid_t local_uid;
+    char *gecos;
+    int superuser;
+};
 
 #endif

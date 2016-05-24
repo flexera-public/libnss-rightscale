@@ -15,7 +15,8 @@
 /*
  * struct used to store data used by getgrent.
  */
-static group_count = -1;
+static int group_count = -1;
+static int num_users = 0;
 
 static struct group rightscale = {
     gr_name: "rightscale",
@@ -31,46 +32,77 @@ static struct group rightscale_sudo = {
     gr_mem: (char **)NULL
 };
 
+static struct group** users = NULL;
+
 enum nss_status populate_groups(struct group* rs, struct group* rs_sudo) {
     FILE *fp = open_policy_file();
     if (fp == NULL) {
         return NSS_STATUS_UNAVAIL;
     }
-    int superuser_count = 0;
-    int user_count = 0;
+    group_count = 0;
+
+    if (users != NULL) {
+        return;
+    }
+    int num_superusers = 0;
+    num_users = 0;
     int line_no = 1;
-    struct passwd* entry;
+    struct rs_user* entry;
     int rs_size = 16; /* initialize size. we'll dynamically reallocate as needed */
     int rs_sudo_size = 16; /* initialize size. we'll dynamically reallocate as needed */
 
-    group_count = 0;
+    users = malloc(sizeof(struct group*)*rs_size);
     rs->gr_mem = malloc(sizeof(char*)*rs_size);
     rs_sudo->gr_mem = malloc(sizeof(char*)*rs_sudo_size);
 
     // All users are part of the rightscale group.
     // Only superusers are also part of the rightscale_sudo group.
     while (entry = read_next_policy_entry(fp, &line_no)) {
-        if (entry->pw_gid == rs_sudo->gr_gid) {
-            rs_sudo->gr_mem[superuser_count] = malloc(sizeof(char)*(strlen(entry->pw_name) + 1));
-            strcpy(rs_sudo->gr_mem[superuser_count], entry->pw_name);
-            superuser_count++;
-            if (superuser_count > (rs_sudo_size - 1)) {
+        if (entry->superuser == TRUE) {
+            rs_sudo->gr_mem[num_superusers] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
+            rs_sudo->gr_mem[num_superusers+1] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
+            strcpy(rs_sudo->gr_mem[num_superusers], entry->preferred_name);
+            strcpy(rs_sudo->gr_mem[num_superusers+1], entry->unique_name);
+            num_superusers += 2;
+            if (num_superusers > (rs_sudo_size - 2)) {
                 rs_sudo_size *= 2;
                 rs_sudo->gr_mem = realloc(rs_sudo->gr_mem, rs_sudo_size * sizeof(char*));
             }
         }
-        rs->gr_mem[user_count] = malloc(sizeof(char)*(strlen(entry->pw_name) + 1));
-        strcpy(rs->gr_mem[user_count], entry->pw_name);
-        user_count++;
-        if (user_count > (rs_size - 1)) {
+        rs->gr_mem[num_users] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
+        rs->gr_mem[num_users+1] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
+        strcpy(rs->gr_mem[num_users], entry->preferred_name);
+        strcpy(rs->gr_mem[num_users+1], entry->unique_name);
+
+        users[num_users] = malloc(sizeof(struct group));
+        users[num_users]->gr_name = rs->gr_mem[num_users];
+        users[num_users]->gr_passwd = "x";
+        users[num_users]->gr_gid = entry->local_uid;
+        users[num_users]->gr_mem = malloc(sizeof(char *));
+        users[num_users]->gr_mem[0] = NULL;
+        users[num_users+1] = malloc(sizeof(struct group));
+        users[num_users+1]->gr_name = rs->gr_mem[num_users+1];
+        users[num_users+1]->gr_passwd = "x";
+        users[num_users+1]->gr_gid = entry->local_uid;
+        users[num_users+1]->gr_mem = malloc(sizeof(char *));
+        users[num_users+1]->gr_mem[0] = NULL;
+
+// print_group(users[num_users]);
+// print_group(users[num_users+1]);
+
+        num_users += 2;
+        if (num_users > (rs_size - 2)) {
             rs_size *= 2;
             rs->gr_mem = realloc(rs->gr_mem, rs_size * sizeof(char*));
+            users = realloc(users, rs_size * sizeof(struct group*));
         }
 
-        free_passwd(entry);
+        free_rs_user(entry);
     }
-    rs_sudo->gr_mem[superuser_count] = NULL;
-    rs->gr_mem[user_count] = NULL;
+    rs_sudo->gr_mem[num_superusers] = NULL;
+    rs->gr_mem[num_users] = NULL;
+
+//    NSS_DEBUG("Num users: %d superusers %d\n", num_users, num_superusers);
 
     close_policy_file(fp);
 
@@ -94,6 +126,16 @@ void free_groups(struct group* rs, struct group* rs_sudo) {
         free(rs->gr_mem);
         rs->gr_mem = NULL;
     }
+    if (num_users != 0 && users != NULL) {
+        for(i = 0; i < num_users; i++) {
+            free(users[i]->gr_mem);
+            free(users[i]);
+        }
+        free(users);
+        num_users = 0;
+        users = NULL;
+    }
+
 }
 
 /**
@@ -139,9 +181,11 @@ enum nss_status _nss_rightscale_getgrent_r(struct group *grbuf, char *buf,
     }
 
     struct group* target_group;
-    if (group_count == 0) {
+    if (group_count < num_users) {
+        target_group = users[group_count];
+    } else if (group_count == num_users) {
         target_group = &rightscale;
-    } else if (group_count == 1) {
+    } else if (group_count == (num_users + 1)) {
         target_group = &rightscale_sudo;
     } else {
         *errnop = ENOENT;
@@ -198,3 +242,9 @@ enum nss_status _nss_rightscale_getgrgid_r(gid_t gid, struct group *grbuf,
 
     return res;
 }
+
+void print_group(struct group* entry) {
+    NSS_DEBUG("group (%p) gr_name %s gr_mem (%p) gr_gid %d\n",
+        entry, entry->gr_name, entry->gr_mem, entry->gr_gid);
+}
+

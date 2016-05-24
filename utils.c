@@ -21,6 +21,7 @@
 #define BUF_SIZE 4096
 static const char *POLICY_FILE = "/var/lib/rightlink/login_policy";
 
+
 FILE* open_policy_file()
 {
     /* Create input file descriptor */
@@ -33,16 +34,15 @@ FILE* open_policy_file()
 
 /* Reads the next policy entry into the passed in struct.
  * Its up to the caller to free everything in the passwd struct.
- * Valid policy entry line is "username:uid:gid:gecos:public_key1:public_key2:..."
+ * Valid policy entry line is:
+ * preferred_name:unique_name:rs_uid:local_uid:superuser:gecos:public_key1:public_key2:..."
  */ 
-struct passwd* read_next_policy_entry(FILE* fp, int* line_no) {
+struct rs_user* read_next_policy_entry(FILE* fp, int* line_no) {
     char rawentry[BUF_SIZE];
-    char *name;
-    char *gecos;
-    char *passwd = "x";
-    char *shell = "/bin/bash";
-    int uid = 0;
-    int gid = 0;
+    char *name, *gecos, *unique_name, *preferred_name;
+    uid_t rs_uid = 0;
+    uid_t local_uid = 0;
+    int superuser = -1;
     const char *delimiters = ":";
 
     int entry_valid = FALSE;
@@ -57,37 +57,45 @@ struct passwd* read_next_policy_entry(FILE* fp, int* line_no) {
         }
         char *rawentryp = rawentry;
 
-        name  = strsep(&rawentryp, delimiters);
-        char *uid_s = strsep(&rawentryp, delimiters);
-        char *gid_s = strsep(&rawentryp, delimiters);
-        if (uid_s != NULL) { sscanf(uid_s, "%d", &uid); }
-        if (gid_s != NULL) { sscanf(gid_s, "%d", &gid); }
+        preferred_name  = strsep(&rawentryp, delimiters);
+        unique_name  = strsep(&rawentryp, delimiters);
+        char *rs_uid_s = strsep(&rawentryp, delimiters);
+        char *local_uid_s = strsep(&rawentryp, delimiters);
+        if (local_uid_s != NULL) { sscanf(local_uid_s, "%d", &local_uid); }
+        if (rs_uid_s != NULL) { sscanf(rs_uid_s, "%d", &rs_uid); }
+        char *superuser_s = strsep(&rawentryp, delimiters);
+        if (superuser_s != NULL) {
+            if (strcmp(superuser_s, "1") == 0 || strcmp(superuser_s, "Y") == 0) {
+                superuser = TRUE;
+            } else if (strcmp(superuser_s, "0") == 0 || strcmp(superuser_s, "N") == 0) {
+                superuser = FALSE;
+            }
+        }
+
         gecos = strsep(&rawentryp, delimiters);
 
-        if (name != NULL && gecos != NULL && uid > 0 && gid > 0) {
+        if (preferred_name != NULL && unique_name != NULL && gecos != NULL &&
+            superuser != -1 && rs_uid > 500 && local_uid > 500) {
             entry_valid = TRUE;
         } else {
             NSS_DEBUG("%s:%d: Invalid format\n", POLICY_FILE, *line_no - 1);
         }
     }
 
-    struct passwd* entry = malloc(sizeof(struct passwd));
-    entry->pw_name = malloc(sizeof(char)*(strlen(name) + 1));
-    strcpy(entry->pw_name, name);
-    entry->pw_dir = malloc(sizeof(char)*(strlen(name) + 7));
-    sprintf(entry->pw_dir, "/home/%s", name);
+    struct rs_user* entry = malloc(sizeof(struct rs_user));
 
-    entry->pw_gecos = malloc(sizeof(char)*(strlen(gecos) + 1));
-    strcpy(entry->pw_gecos, gecos);
-    
-    entry->pw_shell = malloc(sizeof(char)*(strlen(shell) + 1));
-    strcpy(entry->pw_shell, shell);
+    entry->preferred_name = malloc(sizeof(char)*(strlen(preferred_name) + 1));
+    strcpy(entry->preferred_name, preferred_name);
 
-    entry->pw_passwd = malloc(sizeof(char)*(strlen(passwd) + 1));
-    strcpy(entry->pw_passwd, passwd);
+    entry->unique_name = malloc(sizeof(char)*(strlen(unique_name) + 1));
+    strcpy(entry->unique_name, unique_name);
 
-    entry->pw_uid = uid;
-    entry->pw_gid = gid;
+    entry->gecos = malloc(sizeof(char)*(strlen(gecos) + 1));
+    strcpy(entry->gecos, gecos);
+
+    entry->rs_uid = rs_uid;
+    entry->local_uid = local_uid;
+    entry->superuser = superuser;
 
     return entry;
 }
@@ -103,20 +111,31 @@ void close_policy_file(FILE* fp) {
  * @param buf Buffer which will contain all strings pointed to by pwbuf.
  * @param buflen Buffer length.
  * @param entry Source struct populated from policy file.
+ * @param use_preferred Boolean -- whether to fill the name with preferred or unique name.
  * @param errnop Pointer to errno, will be filled if something goes wrong.
  */
 enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
-    struct passwd* entry, int* errnop) {
+    struct rs_user* entry, int use_preferred, int* errnop) {
+    char *passwd = "x";
+    char *shell = "/bin/bash";
+    char *name;
+
     int total_length = 0;
-    int name_length     = strlen(entry->pw_name);
+
+    if (use_preferred == TRUE) {
+        name = entry->preferred_name;
+    } else {
+        name = entry->unique_name;
+    }
+    int name_length = strlen(name);
     total_length += name_length + 1;
-    int passwd_length   = strlen(entry->pw_passwd); 
+    int preferred_name_length = strlen(entry->preferred_name);
+    total_length += preferred_name_length + 7; // For pw_dir aka homedir
+    int passwd_length = strlen(passwd);
     total_length += passwd_length + 1;
-    int dir_length      = strlen(entry->pw_dir);
-    total_length += dir_length + 1;
-    int gecos_length    = strlen(entry->pw_gecos);
+    int gecos_length = strlen(entry->gecos);
     total_length += gecos_length + 1;
-    int shell_length    = strlen(entry->pw_shell);
+    int shell_length = strlen(shell);
     total_length += shell_length + 1;
 
     if(buflen < total_length) {
@@ -124,39 +143,42 @@ enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
         return NSS_STATUS_TRYAGAIN;
     }
 
-    pwbuf->pw_uid = entry->pw_uid;
-    pwbuf->pw_gid = entry->pw_gid;
+    pwbuf->pw_uid = entry->local_uid;
+    pwbuf->pw_gid = entry->local_uid;
 
-    strcpy(buf, entry->pw_name);
+    strcpy(buf, name);
     pwbuf->pw_name = buf;
     buf += name_length + 1;
 
-    strcpy(buf, entry->pw_passwd);
+    sprintf(buf, "/home/%s", entry->preferred_name);
+    pwbuf->pw_dir = buf;
+    buf += preferred_name_length + 7;
+
+    strcpy(buf, passwd);
     pwbuf->pw_passwd = buf;
     buf += passwd_length + 1;
 
-    strcpy(buf, entry->pw_shell);
+    strcpy(buf, shell);
     pwbuf->pw_shell = buf;
     buf += shell_length + 1;
 
-    strcpy(buf, entry->pw_dir);
-    pwbuf->pw_dir = buf;
-    buf += dir_length + 1;
-
-    strcpy(buf, entry->pw_gecos);
+    strcpy(buf, entry->gecos);
     pwbuf->pw_gecos = buf;
     buf += gecos_length + 1;
 
     return NSS_STATUS_SUCCESS;
 }
 
-void free_passwd(struct passwd* entry) {
-    free(entry->pw_name);
-    free(entry->pw_gecos);
-    free(entry->pw_passwd);
-    free(entry->pw_shell);
-    free(entry->pw_dir);
+void free_rs_user(struct rs_user* entry) {
+    free(entry->preferred_name);
+    free(entry->unique_name);
+    free(entry->gecos);
     free(entry);
+}
+
+void print_rs_user(struct rs_user* entry) {
+    NSS_DEBUG("rs_user (%p) preferred_name %s unique_name %s gecos %s rs_uid %d local_uid %d\n",
+        entry, entry->preferred_name, entry->unique_name, entry->gecos, entry->rs_uid, entry->local_uid);
 }
 
 

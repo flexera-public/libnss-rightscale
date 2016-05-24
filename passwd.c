@@ -23,9 +23,11 @@ static struct {
         to getpwent_r */
     //int try_again;
     int line_no;
-    /* user information cache used if NSS_TRYAGAIN was returned */
-    //struct passwd* entry;
-} pwent_data = { NULL, 1 };
+    /* user information cache. per login policy entry we return two passwd
+       entries, one for preferred_name and unique_name */
+    //struct rs_user* entry;
+    int entry_seen_count;
+} pwent_data = { NULL, 1, 0 };
 
 /**
  * Setup everything needed to retrieve passwd entries.
@@ -38,6 +40,7 @@ enum nss_status _nss_rightscale_setpwent() {
             return NSS_STATUS_UNAVAIL;
         }
         pwent_data.line_no = 1;
+        pwent_data.entry_seen_count = 0;
     }
     return NSS_STATUS_SUCCESS;
 }
@@ -76,14 +79,14 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf,
     //     /* buffer was long enough this time */
     //     if(!(res == NSS_STATUS_TRYAGAIN && (*errnop) == ERANGE)) {
     //         pwent_data.try_again = FALSE;
-    //         free_passwd(pwent_data.entry);
+    //         free_rs_user(pwent_data.entry);
     //         return res;
     //     }
     // }
     int previous_line_no = pwent_data.line_no;
     fpos_t previous_pos;
     fgetpos(pwent_data.fp, &previous_pos);
-    struct passwd* entry;
+    struct rs_user* entry;
 
     entry = read_next_policy_entry(pwent_data.fp, &pwent_data.line_no);
 
@@ -92,14 +95,25 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf,
         return NSS_STATUS_NOTFOUND;
     }
 
-    res = fill_passwd(pwbuf, buf, buflen, entry, errnop);
-    free_passwd(entry);
+    int use_preferred = TRUE;
+    if (pwent_data.entry_seen_count == 1) {
+        use_preferred = FALSE;
+    }
+    res = fill_passwd(pwbuf, buf, buflen, entry, use_preferred, errnop);
+    free_rs_user(entry);
     // Rewind and re-read the current entry
     if(res == NSS_STATUS_TRYAGAIN && (*errnop) == ERANGE) {
         pwent_data.line_no = previous_line_no;
         fsetpos(pwent_data.fp, &previous_pos);
-        //pwent_data.try_again = TRUE;
-    } 
+    } else {
+        if (pwent_data.entry_seen_count == 0) {
+            pwent_data.line_no = previous_line_no;
+            fsetpos(pwent_data.fp, &previous_pos);
+            pwent_data.entry_seen_count += 1;
+        } else {
+            pwent_data.entry_seen_count = 0;
+        }
+    }
     return res;
 
 }
@@ -110,7 +124,7 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf,
 enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbuf,
             char *buf, size_t buflen, int *errnop) {
     int res;
-    struct passwd* entry;
+    struct rs_user* entry;
 
     NSS_DEBUG("rightscale getpwnam_r: Looking for user %s\n", name);
 
@@ -122,12 +136,17 @@ enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbu
     int found = FALSE;
     int line_no = 1;
     while (entry = read_next_policy_entry(fp, &line_no)) {
-        if (strcmp(entry->pw_name, name) == 0) {
+        if (strcmp(entry->preferred_name, name) == 0) {
             found = TRUE;
-            res = fill_passwd(pwbuf, buf, buflen, entry, errnop);
+            res = fill_passwd(pwbuf, buf, buflen, entry, TRUE, errnop);
             break;
         }
-        free_passwd(entry);
+        if (strcmp(entry->unique_name, name) == 0) {
+            found = TRUE;
+            res = fill_passwd(pwbuf, buf, buflen, entry, FALSE, errnop);
+            break;
+        }
+        free_rs_user(entry);
     }
 
     /* We've gotten to the end of file without finding anything */
@@ -146,7 +165,7 @@ enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbu
 enum nss_status _nss_rightscale_getpwuid_r(uid_t uid, struct passwd *pwbuf,
                char *buf, size_t buflen, int *errnop) {
     int res;
-    struct passwd* entry;
+    struct rs_user* entry;
 
     NSS_DEBUG("rightscale getpwuid_r: Looking for uid %d\n", uid);
 
@@ -158,13 +177,13 @@ enum nss_status _nss_rightscale_getpwuid_r(uid_t uid, struct passwd *pwbuf,
     int found = FALSE;
     int line_no = 1;
     while (entry = read_next_policy_entry(fp, &line_no)) {
-        if (entry->pw_uid == uid) {
+        if (entry->local_uid == uid) {
             found = TRUE;
-            res = fill_passwd(pwbuf, buf, buflen, entry, errnop);
+            res = fill_passwd(pwbuf, buf, buflen, entry, TRUE, errnop);
             break;
         }
 
-        free_passwd(entry);
+        free_rs_user(entry);
     }
 
     /* We've gotten to the end of file without finding anything */
