@@ -18,14 +18,7 @@
  */
 static struct {
     FILE* fp;
-    /*  flag to know if NSS_TRYAGAIN
-        was returned by previous call
-        to getpwent_r */
-    //int try_again;
     int line_no;
-    /* user information cache. per login policy entry we return two passwd
-       entries, one for preferred_name and unique_name */
-    //struct rs_user* entry;
     int entry_seen_count;
 } pwent_data = { NULL, 1, 0 };
 
@@ -74,15 +67,6 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf,
         }
     }
 
-    // if(pwent_data.try_again) {
-    //     res = fill_passwd(pwbuf, buf, buflen, pwent_data.entry, errnop);
-    //     /* buffer was long enough this time */
-    //     if(!(res == NSS_STATUS_TRYAGAIN && (*errnop) == ERANGE)) {
-    //         pwent_data.try_again = FALSE;
-    //         free_rs_user(pwent_data.entry);
-    //         return res;
-    //     }
-    // }
     int previous_line_no = pwent_data.line_no;
     fpos_t previous_pos;
     fgetpos(pwent_data.fp, &previous_pos);

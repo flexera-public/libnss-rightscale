@@ -9,6 +9,7 @@
 #include <malloc.h>
 #include <pwd.h>
 #include <string.h>
+#include <shadow.h>
 #include <sys/un.h>
 
 #include <stdio.h>
@@ -165,6 +166,58 @@ enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
     strcpy(buf, entry->gecos);
     pwbuf->pw_gecos = buf;
     buf += gecos_length + 1;
+
+    return NSS_STATUS_SUCCESS;
+}
+
+/*
+ * Fill an user struct using given information.
+ * @param spbuf Struct which will be filled with various info.
+ * @param buf Buffer which will contain all strings pointed to by pwbuf.
+ * @param buflen Buffer length.
+ * @param entry Source struct populated from policy file.
+ * @param use_preferred Boolean -- whether to fill the name with preferred or unique name.
+ * @param errnop Pointer to errno, will be filled if something goes wrong.
+ */
+enum nss_status fill_spwd(struct spwd* spbuf, char* buf, size_t buflen,
+    struct rs_user* entry, int use_preferred, int* errnop) {
+    char *name;
+    char *passwd = "*";
+    int total_length = 0;
+
+    if (use_preferred == TRUE) {
+        name = entry->preferred_name;
+    } else {
+        name = entry->unique_name;
+    }
+
+    int name_length = strlen(name);
+    total_length += name_length + 1;
+
+    int passwd_length = strlen(passwd);
+    total_length += passwd_length + 1;
+
+    if(buflen < total_length) {
+        *errnop = ERANGE;
+        return NSS_STATUS_TRYAGAIN;
+    }
+
+    spbuf->sp_lstchg = 0;
+    spbuf->sp_warn = 7;
+    /*
+    spbuf->sp_inact = 0;
+    spbuf->sp_min = 0;
+    spbuf->sp_max = 99999;
+    spbuf->sp_expire = 0;
+    spbuf->sp_flag = 0; */
+
+    strcpy(buf, name);
+    spbuf->sp_namp = buf;
+    buf += name_length + 1;
+
+    strcpy(buf, passwd);
+    spbuf->sp_pwdp = buf;
+    buf += passwd_length + 1;
 
     return NSS_STATUS_SUCCESS;
 }
