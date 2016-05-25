@@ -213,8 +213,18 @@ enum nss_status _nss_rightscale_getgrnam_r(const char* name, struct group *grbuf
     } else if (strcmp(name, rightscale_sudo.gr_name) == 0) {
         res = fill_group(grbuf, buf, buflen, &rightscale_sudo, errnop);
     } else {
-        res = NSS_STATUS_NOTFOUND;
-        *errnop = ENOENT;
+        int i;
+        int found=FALSE;
+        for (i = 0; i < num_users && !found; i++) {
+            if (strcmp(name, users[i]->gr_name) == 0) {
+                found = TRUE;
+                res = fill_group(grbuf, buf, buflen, users[i], errnop);
+            }
+        }
+        if (!found) {
+            res = NSS_STATUS_NOTFOUND;
+            *errnop = ENOENT;
+        }
     }
     free_groups(&rightscale, &rightscale_sudo);
 
@@ -235,8 +245,18 @@ enum nss_status _nss_rightscale_getgrgid_r(gid_t gid, struct group *grbuf,
     } else if (gid == rightscale_sudo.gr_gid) {
         res = fill_group(grbuf, buf, buflen, &rightscale_sudo, errnop);
     } else {
-        res = NSS_STATUS_NOTFOUND;
-        *errnop = ENOENT;
+        int i;
+        int found=FALSE;
+        for (i = 0; i < num_users && !found; i++) {
+            if (gid == users[i]->gr_gid) {
+                found = TRUE;
+                res = fill_group(grbuf, buf, buflen, users[i], errnop);
+            }
+        }
+        if (!found) {
+            res = NSS_STATUS_NOTFOUND;
+            *errnop = ENOENT;
+        }
     }
     free_groups(&rightscale, &rightscale_sudo);
 
