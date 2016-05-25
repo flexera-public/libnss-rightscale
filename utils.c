@@ -202,14 +202,15 @@ enum nss_status fill_spwd(struct spwd* spbuf, char* buf, size_t buflen,
         return NSS_STATUS_TRYAGAIN;
     }
 
-    spbuf->sp_lstchg = 0;
     spbuf->sp_warn = 7;
-    /*
-    spbuf->sp_inact = 0;
-    spbuf->sp_min = 0;
-    spbuf->sp_max = 99999;
-    spbuf->sp_expire = 0;
-    spbuf->sp_flag = 0; */
+    /* Follow fields should not be populated and will be set as follows:
+    spbuf->sp_lstchg = nil; Days since password last changed. nil if feature isn't used.
+    spbuf->sp_inact = nil; Days after password expiration acct is valid. nil = forever.
+    spbuf->sp_min = 0; Min days to password change
+    spbuf->sp_max = 99999; Max days to password change
+    spbuf->sp_expire = nil; Password never expires
+    spbuf->sp_flag = nil; Reserved for future use
+    */
 
     strcpy(buf, name);
     spbuf->sp_namp = buf;
