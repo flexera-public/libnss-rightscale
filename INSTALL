@@ -20,7 +20,7 @@ remove this package.See README for further details.
 Compilers and Options
 =====================
 
-     ./configure CFLAGS=-DDEBUG to compile with DEBUG set, which prints lots
+     ./configure --enable-debug to compile with DEBUG set, which prints lots
 of messages to stdout.
 
    *Note Defining Variables::, for more details.

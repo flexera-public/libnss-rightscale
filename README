@@ -3,6 +3,8 @@ libnss-rightlink
 
 ABOUT
 ------------------
+This repo contains all the pieces needed to get managed login working with
+rightscale. Managed login is built on the top of nss/pam. 
 
 INSTALLATION
 ------------------
@@ -15,20 +17,45 @@ sudo make install
 
 CONFIGURATION
 ------------------
-1. Configure nsswitch.conf
-
-The second step is to tell glibc that we use this lib. Open /etc/nsswitch.conf
-and add sqlite at the end of the passwd, groups and shadow lines. You should
-obtain something like:
+The following steps must occur for this to module to work on a RightScale
+managed instance:
+1. An instance running rightlink 10 10.5 or newer boots up. This instance
+   will lay down a policy file in /var/lib/rightlink/login_policy which
+   contains a list of usernames and public keys.
+2. A RightScript (see contrib) will install this nss module to
+   /usr/lib/nss_rightscale.so.2. /etc/nsswitch.conf will be modified to
+   add the "rightscale" module to nsswitch.conf as so:
 
 # ...
 passwd:         compat rightscale
 group:          compat rightscale
-shadow:         compat
+shadow:         compat rightscale
 # ...
+
+3. User home directories will not exist by default. PAM should be instructed to
+  create them if they don't exist by loading pam_mkhomedir.so. Add the following
+  line to /etc/pam.d/ssh
+# ...
+session    required    pam_mkhomedir.so skel=/etc/skel/ umask=0022
+# ...
+
+4. NSS doesn't know about public keys. OpenSSH deferes to NSS for username
+   validation but has its own system for handling public keys. A helper script
+   should be added to the system to read and return public keys embedded in
+   /var/lib/rightlink/login_policy. Install scripts/rs-ssh-keys to
+   /usr/local/bin/rs-ssh-keys then add the following to /etc/ssh/sshd_config:
+
+# ...
+AuthorizedKeysCommand /usr/local/bin/rs-ssh-keys
+AuthorizedKeysCommandUser nobody
+# ...
+
 
 TEST
 ------------------
+Run `make test` to run unit tests.
 
 AUTHORS
 ------------------
+Peter Schroeter <peter.schroeter@rightscale.com>
+Maintained by the RightScale Ivory Team.
