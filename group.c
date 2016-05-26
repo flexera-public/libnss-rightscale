@@ -12,11 +12,12 @@
 #include <string.h>
 #include <unistd.h>
 
-/*
- * struct used to store data used by getgrent.
- */
-static int group_count = -1;
-static int num_users = 0;
+/* struct used to store data used by getgrent. */
+ static struct {
+    int group_count;
+    struct group** users;
+    int num_users;
+} grent_data = { -1, NULL, 0 };
 
 static struct group rightscale = {
     gr_name: "rightscale",
@@ -32,26 +33,28 @@ static struct group rightscale_sudo = {
     gr_mem: (char **)NULL
 };
 
-static struct group** users = NULL;
 
+/* Reads through the entire policy file and compiles a list of groups. Currently
+ * each user gets their own group and also belongs to the rightscale group.
+ * Superusers additionally belong to the rightscale_sudo group */
 enum nss_status populate_groups(struct group* rs, struct group* rs_sudo) {
     FILE *fp = open_policy_file();
     if (fp == NULL) {
         return NSS_STATUS_UNAVAIL;
     }
-    group_count = 0;
+    grent_data.group_count = 0;
 
-    if (users != NULL) {
+    if (grent_data.users != NULL) {
         return;
     }
     int num_superusers = 0;
-    num_users = 0;
+    grent_data.num_users = 0;
     int line_no = 1;
     struct rs_user* entry;
-    int rs_size = 16; /* initialize size. we'll dynamically reallocate as needed */
-    int rs_sudo_size = 16; /* initialize size. we'll dynamically reallocate as needed */
+    int rs_size = 16; /* initial size. we'll dynamically reallocate as needed */
+    int rs_sudo_size = 16; /* initial size. we'll dynamically reallocate as needed */
 
-    users = malloc(sizeof(struct group*)*rs_size);
+    grent_data.users = malloc(sizeof(struct group*)*rs_size);
     rs->gr_mem = malloc(sizeof(char*)*rs_size);
     rs_sudo->gr_mem = malloc(sizeof(char*)*rs_sudo_size);
 
@@ -69,46 +72,42 @@ enum nss_status populate_groups(struct group* rs, struct group* rs_sudo) {
                 rs_sudo->gr_mem = realloc(rs_sudo->gr_mem, rs_sudo_size * sizeof(char*));
             }
         }
-        rs->gr_mem[num_users] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
-        rs->gr_mem[num_users+1] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
-        strcpy(rs->gr_mem[num_users], entry->preferred_name);
-        strcpy(rs->gr_mem[num_users+1], entry->unique_name);
+        rs->gr_mem[grent_data.num_users] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
+        rs->gr_mem[grent_data.num_users+1] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
+        strcpy(rs->gr_mem[grent_data.num_users], entry->preferred_name);
+        strcpy(rs->gr_mem[grent_data.num_users+1], entry->unique_name);
 
-        users[num_users] = malloc(sizeof(struct group));
-        users[num_users]->gr_name = rs->gr_mem[num_users];
-        users[num_users]->gr_passwd = "x";
-        users[num_users]->gr_gid = entry->local_uid;
-        users[num_users]->gr_mem = malloc(sizeof(char *));
-        users[num_users]->gr_mem[0] = NULL;
-        users[num_users+1] = malloc(sizeof(struct group));
-        users[num_users+1]->gr_name = rs->gr_mem[num_users+1];
-        users[num_users+1]->gr_passwd = "x";
-        users[num_users+1]->gr_gid = entry->local_uid;
-        users[num_users+1]->gr_mem = malloc(sizeof(char *));
-        users[num_users+1]->gr_mem[0] = NULL;
+        grent_data.users[grent_data.num_users] = malloc(sizeof(struct group));
+        grent_data.users[grent_data.num_users]->gr_name = rs->gr_mem[grent_data.num_users];
+        grent_data.users[grent_data.num_users]->gr_passwd = "x";
+        grent_data.users[grent_data.num_users]->gr_gid = entry->local_uid;
+        grent_data.users[grent_data.num_users]->gr_mem = malloc(sizeof(char *));
+        grent_data.users[grent_data.num_users]->gr_mem[0] = NULL;
+        grent_data.users[grent_data.num_users+1] = malloc(sizeof(struct group));
+        grent_data.users[grent_data.num_users+1]->gr_name = rs->gr_mem[grent_data.num_users+1];
+        grent_data.users[grent_data.num_users+1]->gr_passwd = "x";
+        grent_data.users[grent_data.num_users+1]->gr_gid = entry->local_uid;
+        grent_data.users[grent_data.num_users+1]->gr_mem = malloc(sizeof(char *));
+        grent_data.users[grent_data.num_users+1]->gr_mem[0] = NULL;
 
-// print_group(users[num_users]);
-// print_group(users[num_users+1]);
-
-        num_users += 2;
-        if (num_users > (rs_size - 2)) {
+        grent_data.num_users += 2;
+        if (grent_data.num_users > (rs_size - 2)) {
             rs_size *= 2;
             rs->gr_mem = realloc(rs->gr_mem, rs_size * sizeof(char*));
-            users = realloc(users, rs_size * sizeof(struct group*));
+            grent_data.users = realloc(grent_data.users, rs_size * sizeof(struct group*));
         }
 
         free_rs_user(entry);
     }
     rs_sudo->gr_mem[num_superusers] = NULL;
-    rs->gr_mem[num_users] = NULL;
-
-//    NSS_DEBUG("Num users: %d superusers %d\n", num_users, num_superusers);
+    rs->gr_mem[grent_data.num_users] = NULL;
 
     close_policy_file(fp);
 
     return NSS_STATUS_SUCCESS;
 }
 
+/* Undoes everything done by populate_groups and free's all resources */
 void free_groups(struct group* rs, struct group* rs_sudo) {
     int i;
     if (rs_sudo->gr_mem != NULL) {
@@ -126,66 +125,59 @@ void free_groups(struct group* rs, struct group* rs_sudo) {
         free(rs->gr_mem);
         rs->gr_mem = NULL;
     }
-    if (num_users != 0 && users != NULL) {
-        for(i = 0; i < num_users; i++) {
-            free(users[i]->gr_mem);
-            free(users[i]);
+    if (grent_data.num_users != 0 && grent_data.users != NULL) {
+        for(i = 0; i < grent_data.num_users; i++) {
+            free(grent_data.users[i]->gr_mem);
+            free(grent_data.users[i]);
         }
-        free(users);
-        num_users = 0;
-        users = NULL;
+        free(grent_data.users);
+        grent_data.num_users = 0;
+        grent_data.users = NULL;
     }
 
 }
 
-/**
- * Setup everything needed to retrieve group entries.
- */
+/* Setup everything needed to retrieve group entries. */
 enum nss_status _nss_rightscale_setgrent() {
     NSS_DEBUG("rightscale setgrent\n");
 
-    int res = populate_groups(&rightscale, &rightscale_sudo);
+    enum nss_status res = populate_groups(&rightscale, &rightscale_sudo);
     if (res != NSS_STATUS_SUCCESS) {
         return res;
     }
-    group_count = 0;
+    grent_data.group_count = 0;
 
     return NSS_STATUS_SUCCESS;
 }
 
-/*
- * Free getgrent resources.
- */
+/* Free getgrent resources. */
 enum nss_status _nss_rightscale_endgrent() {
     NSS_DEBUG("rightscale endgrent\n");
-    group_count = -1;
+    grent_data.group_count = -1;
     free_groups(&rightscale, &rightscale_sudo);
     return NSS_STATUS_SUCCESS;
 }
 
-/*
- * Return next group entry.
- */
+/* Return next group entry. */
 enum nss_status _nss_rightscale_getgrent_r(struct group *grbuf, char *buf,
             size_t buflen, int *errnop) {
 
-    int res;
-    enum nss_status set_status;
+    enum nss_status res;
     NSS_DEBUG("rightscale getgrent_r\n");
-    if (group_count == -1) {
-        set_status = _nss_rightscale_setgrent();
-        if (set_status != NSS_STATUS_SUCCESS) {
+    if (grent_data.group_count == -1) {
+        res = _nss_rightscale_setgrent();
+        if (res != NSS_STATUS_SUCCESS) {
             *errnop = ENOENT;
-            return set_status;
+            return res;
         }
     }
 
     struct group* target_group;
-    if (group_count < num_users) {
-        target_group = users[group_count];
-    } else if (group_count == num_users) {
+    if (grent_data.group_count < grent_data.num_users) {
+        target_group = grent_data.users[grent_data.group_count];
+    } else if (grent_data.group_count == grent_data.num_users) {
         target_group = &rightscale;
-    } else if (group_count == (num_users + 1)) {
+    } else if (grent_data.group_count == (grent_data.num_users + 1)) {
         target_group = &rightscale_sudo;
     } else {
         *errnop = ENOENT;
@@ -194,18 +186,18 @@ enum nss_status _nss_rightscale_getgrent_r(struct group *grbuf, char *buf,
     res = fill_group(grbuf, buf, buflen, target_group, errnop);
     /* buffer was long enough this time */
     if(!(res == NSS_STATUS_TRYAGAIN && (*errnop) == ERANGE)) {
-        group_count += 1;
+        grent_data.group_count += 1;
     }
     return res;
 }
 
-/**
- * Get group by name
- */
+/* Get group by name */
 enum nss_status _nss_rightscale_getgrnam_r(const char* name, struct group *grbuf,
             char *buf, size_t buflen, int *errnop) {
-    int res;
-    populate_groups(&rightscale, &rightscale_sudo);
+    enum nss_status res = populate_groups(&rightscale, &rightscale_sudo);
+    if (res != NSS_STATUS_SUCCESS) {
+        return res;
+    }
 
     NSS_DEBUG("rightscale getgrnam_r: Looking for group %s\n", name);
     if (strcmp(name, rightscale.gr_name) == 0) {
@@ -215,10 +207,10 @@ enum nss_status _nss_rightscale_getgrnam_r(const char* name, struct group *grbuf
     } else {
         int i;
         int found=FALSE;
-        for (i = 0; i < num_users && !found; i++) {
-            if (strcmp(name, users[i]->gr_name) == 0) {
+        for (i = 0; i < grent_data.num_users && !found; i++) {
+            if (strcmp(name, grent_data.users[i]->gr_name) == 0) {
                 found = TRUE;
-                res = fill_group(grbuf, buf, buflen, users[i], errnop);
+                res = fill_group(grbuf, buf, buflen, grent_data.users[i], errnop);
             }
         }
         if (!found) {
@@ -231,13 +223,13 @@ enum nss_status _nss_rightscale_getgrnam_r(const char* name, struct group *grbuf
     return res;
 }
 
-/*
- * Get group by GID.
- */
+/* Get group by GID. */
 enum nss_status _nss_rightscale_getgrgid_r(gid_t gid, struct group *grbuf,
                char *buf, size_t buflen, int *errnop) {
-    int res;
-    populate_groups(&rightscale, &rightscale_sudo);
+    enum nss_status res = populate_groups(&rightscale, &rightscale_sudo);
+    if (res != NSS_STATUS_SUCCESS) {
+        return res;
+    }
 
     NSS_DEBUG("rightscale getgrgid_r: Looking for group #%d\n", gid);
     if (gid == rightscale.gr_gid) {
@@ -247,10 +239,10 @@ enum nss_status _nss_rightscale_getgrgid_r(gid_t gid, struct group *grbuf,
     } else {
         int i;
         int found=FALSE;
-        for (i = 0; i < num_users && !found; i++) {
-            if (gid == users[i]->gr_gid) {
+        for (i = 0; i < grent_data.num_users && !found; i++) {
+            if (gid == grent_data.users[i]->gr_gid) {
                 found = TRUE;
-                res = fill_group(grbuf, buf, buflen, users[i], errnop);
+                res = fill_group(grbuf, buf, buflen, grent_data.users[i], errnop);
             }
         }
         if (!found) {
@@ -263,6 +255,7 @@ enum nss_status _nss_rightscale_getgrgid_r(gid_t gid, struct group *grbuf,
     return res;
 }
 
+/* Debugging helper */
 void print_group(struct group* entry) {
     NSS_DEBUG("group (%p) gr_name %s gr_mem (%p) gr_gid %d\n",
         entry, entry->gr_name, entry->gr_mem, entry->gr_gid);
