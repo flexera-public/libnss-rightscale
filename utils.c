@@ -19,7 +19,6 @@
 
 /* This must be longer than any single line in the policy file */
 #define BUF_SIZE 4096
-static const char *POLICY_FILE = "/var/lib/rightlink/login_policy";
 
 
 FILE* open_policy_file()

@@ -25,6 +25,8 @@
 #define FALSE 0
 #define TRUE !FALSE
 
+#define POLICY_FILE "/var/lib/rightlink/login_policy"
+
 /* Struct defining an entry in the /var/lib/rightlink/login_policy file */
 struct rs_user {
     char *preferred_name; /* Preferred login name. May not be stable over time */
