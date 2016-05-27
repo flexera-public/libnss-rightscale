@@ -1,0 +1,12 @@
+# Travis-CI for libnss-rightlink
+language: c
+
+# sudo=false makes the build run using a container
+sudo: false
+
+script:
+  - ./configure
+  - make
+  - gcc -g test.c -o run_tests shadow.o utils.o passwd.o group.o
+  - ./run_tests scripts/sample_policy
+
