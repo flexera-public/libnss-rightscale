@@ -1,5 +1,5 @@
 /* Test script.
- * Compile with: gcc -g test.c -o run_tests shadow.o utils.o passwd.o group.o
+ * Compile with: make && gcc -g test.c -o run_tests shadow.o utils.o passwd.o group.o
  * Run with: ./run_tests
 */
 
@@ -23,10 +23,21 @@ static void report_nss_error(const char *who, enum nss_status status) {
 
 static struct passwd *nss_getpwent(void) {
   static struct passwd pwd;
-  static char buf[1000];
+  static char *buf;
+  static int buflen = 4;
   enum nss_status status;
 
-  status = _nss_rightscale_getpwent_r(&pwd, buf, sizeof(buf), &nss_errno);
+again:
+  status = _nss_rightscale_getpwent_r(&pwd, buf, buflen, &nss_errno);
+  if (status == NSS_STATUS_TRYAGAIN) {
+    buflen *= 2;
+    buf = (char *)realloc(buf, buflen);
+    if (!buf) {
+      return NULL;
+    }
+    goto again;
+  }
+
   if (status == NSS_STATUS_NOTFOUND) {
     return NULL;
   }
@@ -39,10 +50,21 @@ static struct passwd *nss_getpwent(void) {
 
 static struct passwd *nss_getpwnam(const char *name) {
   static struct passwd pwd;
-  static char buf[1000];
+  static char *buf;
+  static int buflen = 5;
   enum nss_status status;
 
-  status = _nss_rightscale_getpwnam_r(name, &pwd, buf, sizeof(buf), &nss_errno);
+again:
+  status = _nss_rightscale_getpwnam_r(name, &pwd, buf, buflen, &nss_errno);
+  if (status == NSS_STATUS_TRYAGAIN) {
+    buflen *= 2;
+    buf = (char *)realloc(buf, buflen);
+    if (!buf) {
+      return NULL;
+    }
+    goto again;
+  }
+
   if (status == NSS_STATUS_NOTFOUND) {
     return NULL;
   }
