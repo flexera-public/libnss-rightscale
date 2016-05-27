@@ -1,6 +1,6 @@
 /* Test script.
- * Compile with: gcc -g test.c -o test shadow.o utils.o passwd.o group.o
- * Run with: ./test scripts/sample_policy 
+ * Compile with: gcc -g test.c -o run_tests shadow.o utils.o passwd.o group.o
+ * Run with: ./run_tests
 */
 
 
@@ -141,7 +141,7 @@ static void nss_endspent(void) {
 static struct group *nss_getgrent(void) {
   static struct group grp;
   static char *buf;
-  static int buflen = 1024;
+  static int buflen = 5;
   enum nss_status status;
 
   if (!buf)
@@ -172,7 +172,7 @@ again:
 static struct group *nss_getgrnam(const char *name) {
   static struct group grp;
   static char *buf;
-  static int buflen = 1000;
+  static int buflen = 4;  /* intentionally choose a tiny buffer to make sure TRYAGAIN stuff works */
   enum nss_status status;
 
   if (!buf)
@@ -202,7 +202,7 @@ again:
 static struct group *nss_getgrgid(gid_t gid) {
   static struct group grp;
   static char *buf;
-  static int buflen = 1000;
+  static int buflen = 4; /* intentionally choose a tiny buffer to make sure TRYAGAIN stuff works */
   enum nss_status status;
 
   if (!buf)
@@ -287,11 +287,11 @@ static void print_group(struct group *grp) {
   printf("%s\n", grp->gr_mem[i]);
 }
 
+// Loop over all users in passwd and make sure they don't return errors
 static void nss_test_users(void) {
   struct passwd *pwd;
 
   nss_setpwent();
-  /* loop over all users */
   while ((pwd = nss_getpwent())) {
     printf("Testing user %s\n", pwd->pw_name);
     printf("  getpwent:   "); print_passwd(pwd);
@@ -314,11 +314,11 @@ static void nss_test_users(void) {
   nss_endpwent();
 }
 
+// Loop over all users in shadow and make sure they don't return errors
 static void nss_test_shadow(void) {
   struct spwd *pwd;
 
   nss_setspent();
-  /* loop over all users */
   while ((pwd = nss_getspent())) {
     printf("Testing shadow %s\n", pwd->sp_namp);
     printf("  getspent:   "); print_spwd(pwd);
@@ -334,10 +334,12 @@ static void nss_test_shadow(void) {
   nss_endspent();
 }
 
+// See setgrent/endgrent/getgrent man page: http://linux.die.net/man/3/setgrent
+// This makes sure that behavior is enforced (getgrent calls setgrent, setgrent)
+// rewinds the db, etc.
 static void nss_test_idempotency(void) {
   char first_name[1024];
 
-  // See setgrent/endgrent/getgrent docs for ref.
   printf("Testing group idempotency\n");
   nss_endgrent();
   printf("  getgrent calls setgrent\n");
@@ -449,6 +451,12 @@ static void nss_test_errors(void) {
  int main(int argc, char *argv[]) {
   set_policy_file("./scripts/sample_policy");
   printf("Using policy file ./scripts/sample_policy\n");
+  printf("NSS possible return values:\n");
+  printf("  NSS_STATUS_SUCCESS   %d\n", NSS_STATUS_SUCCESS);
+  printf("  NSS_STATUS_NOTFOUND  %d\n", NSS_STATUS_NOTFOUND);
+  printf("  NSS_STATUS_UNAVAIL   %d\n", NSS_STATUS_UNAVAIL);
+  printf("  NSS_STATUS_TRYAGAIN  %d\n", NSS_STATUS_TRYAGAIN);
+  printf("\n");
 
   nss_test_users();
   nss_test_groups();
