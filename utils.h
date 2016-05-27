@@ -6,6 +6,7 @@
 #include <shadow.h>
 
 /* Read and parse entries from the RightScale policy file */
+void set_policy_file(char *);
 FILE* open_policy_file();
 void close_policy_file(FILE *fp);
 struct rs_user* read_next_policy_entry(FILE*, int*);

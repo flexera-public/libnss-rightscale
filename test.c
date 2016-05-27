@@ -9,8 +9,6 @@
 #include <string.h>
 
 #include "nss-rightscale.h"
-#undef POLICY_FILE
-#define POLICY_FILE "./scripts/sample_policy"
 
 static int nss_errno;
 static enum nss_status last_error;
@@ -449,7 +447,8 @@ static void nss_test_errors(void) {
 }
 
  int main(int argc, char *argv[]) {
-  printf("Using policy file %s\n", POLICY_FILE);
+  set_policy_file("./scripts/sample_policy");
+  printf("Using policy file ./scripts/sample_policy\n");
 
   nss_test_users();
   nss_test_groups();

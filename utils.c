@@ -20,9 +20,14 @@
 /* This must be longer than any single line in the policy file */
 #define BUF_SIZE 4096
 
+char * POLICY_FILE = "/var/lib/rightlink/login_policy";
 
-FILE* open_policy_file()
-{
+void set_policy_file(char *new_file_name) {
+    POLICY_FILE = new_file_name;
+}
+
+
+FILE* open_policy_file() {
     /* Create input file descriptor */
     FILE* fp = fopen(POLICY_FILE, "r");
     if (fp == NULL) {
