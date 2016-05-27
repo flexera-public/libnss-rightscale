@@ -28,9 +28,11 @@ enum nss_status _nss_rightscale_setpwent() {
         if (pwent_data.fp == NULL) {
             return NSS_STATUS_UNAVAIL;
         }
-        pwent_data.line_no = 1;
-        pwent_data.entry_seen_count = 0;
+    } else {
+      rewind(pwent_data.fp);
     }
+    pwent_data.line_no = 1;
+    pwent_data.entry_seen_count = 0;
     return NSS_STATUS_SUCCESS;
 }
 

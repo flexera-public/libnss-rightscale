@@ -35,20 +35,16 @@ struct rs_user {
     int superuser;        /* Whether the username is a superuser or not */
 };
 
-
 enum nss_status _nss_rightscale_setpwent();
 enum nss_status _nss_rightscale_endpwent();
 enum nss_status _nss_rightscale_getpwent_r(struct passwd*, char *, size_t, int *);
 enum nss_status _nss_rightscale_getpwnam_r(const char*, struct passwd *, char *, size_t, int *);
 enum nss_status _nss_rightscale_getpwuid_r(uid_t, struct passwd *, char *, size_t, int *);
 
-
 enum nss_status _nss_rightscale_setspent();
 enum nss_status _nss_rightscale_endspent();
 enum nss_status _nss_rightscale_getspent_r(struct spwd*, char *, size_t, int *);
 enum nss_status _nss_rightscale_getspnam_r(const char*, struct spwd *, char *, size_t, int *);
-enum nss_status _nss_rightscale_getspuid_r(uid_t, struct spwd *, char *, size_t, int *);
-
 
 enum nss_status _nss_rightscale_setgrent();
 enum nss_status _nss_rightscale_endgrent();

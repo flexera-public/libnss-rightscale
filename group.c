@@ -14,7 +14,7 @@
 
 /* struct used to store data used by getgrent. */
 struct group_data {
-    int group_count;
+    int group_counter;
     struct group** users;
     int num_users;
     struct group* rightscale;
@@ -27,16 +27,18 @@ static struct group_data grent_data = { -1, NULL, 0, NULL, NULL };
  * each user gets their own group and also belongs to the rightscale group.
  * Superusers additionally belong to the rightscale_sudo group */
 enum nss_status populate_groups(struct group_data* rs_groups) {
-    //struct group* rs, struct group* rs_sudo) {
+    /* Rewind in case setgrent was called again */
+    rs_groups->group_counter = 0;
+
+    if (rs_groups->users != NULL) {
+        return NSS_STATUS_SUCCESS;
+    }
+    
     FILE *fp = open_policy_file();
     if (fp == NULL) {
         return NSS_STATUS_UNAVAIL;
     }
-    rs_groups->group_count = 0;
 
-    if (rs_groups->users != NULL) {
-        return;
-    }
     int num_superusers = 0;
     rs_groups->num_users = 0;
     int line_no = 1;
@@ -108,7 +110,7 @@ enum nss_status populate_groups(struct group_data* rs_groups) {
 /* Undoes everything done by populate_groups and free's all resources */
 void free_groups(struct group_data* rs_groups) {
     int i;
-    rs_groups->group_count = -1;
+    rs_groups->group_counter = -1;
     if (rs_groups->rightscale_sudo != NULL) {
         for(i = 0; rs_groups->rightscale_sudo->gr_mem[i] != NULL; i++) {
             free(rs_groups->rightscale_sudo->gr_mem[i]);
@@ -163,7 +165,7 @@ enum nss_status _nss_rightscale_getgrent_r(struct group *grbuf, char *buf,
 
     enum nss_status res;
     NSS_DEBUG("rightscale getgrent_r\n");
-    if (grent_data.group_count == -1) {
+    if (grent_data.group_counter == -1) {
         res = _nss_rightscale_setgrent();
         if (res != NSS_STATUS_SUCCESS) {
             *errnop = ENOENT;
@@ -172,11 +174,11 @@ enum nss_status _nss_rightscale_getgrent_r(struct group *grbuf, char *buf,
     }
 
     struct group* target_group;
-    if (grent_data.group_count < grent_data.num_users) {
-        target_group = grent_data.users[grent_data.group_count];
-    } else if (grent_data.group_count == grent_data.num_users) {
+    if (grent_data.group_counter < grent_data.num_users) {
+        target_group = grent_data.users[grent_data.group_counter];
+    } else if (grent_data.group_counter == grent_data.num_users) {
         target_group = grent_data.rightscale;
-    } else if (grent_data.group_count == (grent_data.num_users + 1)) {
+    } else if (grent_data.group_counter == (grent_data.num_users + 1)) {
         target_group = grent_data.rightscale_sudo;
     } else {
         *errnop = ENOENT;
@@ -185,7 +187,7 @@ enum nss_status _nss_rightscale_getgrent_r(struct group *grbuf, char *buf,
     res = fill_group(grbuf, buf, buflen, target_group, errnop);
     /* buffer was long enough this time */
     if(!(res == NSS_STATUS_TRYAGAIN && (*errnop) == ERANGE)) {
-        grent_data.group_count += 1;
+        grent_data.group_counter += 1;
     }
     return res;
 }

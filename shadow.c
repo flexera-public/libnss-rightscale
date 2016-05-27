@@ -38,9 +38,11 @@ enum nss_status _nss_rightscale_setspent() {
         if (spent_data.fp == NULL) {
             return NSS_STATUS_UNAVAIL;
         }
-        spent_data.line_no = 1;
-        spent_data.entry_seen_count = 0;
+    } else {
+      rewind(spent_data.fp);
     }
+    spent_data.line_no = 1;
+    spent_data.entry_seen_count = 0;
     return NSS_STATUS_SUCCESS;
 }
 
@@ -149,42 +151,3 @@ enum nss_status _nss_rightscale_getspnam_r(const char* name, struct spwd *spbuf,
     close_policy_file(fp);
     return res;
 }
-
-/*
- * Get shadow by UID.
- */
-enum nss_status _nss_rightscale_getspuid_r(uid_t uid, struct spwd *spbuf,
-               char *buf, size_t buflen, int *errnop) {
-    int res;
-    struct rs_user* entry;
-
-    NSS_DEBUG("rightscale getspuid_r: Looking for uid %d\n", uid);
-
-    FILE *fp = open_policy_file();
-    if (fp == NULL) {
-        *errnop = ENOENT;
-        return NSS_STATUS_UNAVAIL;
-    }
-    int found = FALSE;
-    int line_no = 1;
-    while (entry = read_next_policy_entry(fp, &line_no)) {
-        if (entry->local_uid == uid) {
-            found = TRUE;
-            res = fill_spwd(spbuf, buf, buflen, entry, TRUE, errnop);
-            break;
-        }
-
-        free_rs_user(entry);
-    }
-
-    /* We've gotten to the end of file without finding anything */
-    if (!found) {
-        res = NSS_STATUS_NOTFOUND;
-        *errnop = ENOENT;
-    }
-
-    close_policy_file(fp);
-    return res;
-}
-
-
