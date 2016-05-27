@@ -2,9 +2,6 @@
  * shadow.c : Functions handling shadow entries retrieval.
  */
 
-#include "nss-rightscale.h"
-#include "utils.h"
-
 #include <errno.h>
 #include <grp.h>
 #include <malloc.h>
@@ -13,6 +10,9 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+#include "nss-rightscale.h"
+#include "utils.h"
 
 /*
  * Get shadow information using username.

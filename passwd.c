@@ -107,16 +107,13 @@ enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbu
     }
     int found = FALSE;
     int line_no = 1;
-    while (entry = read_next_policy_entry(fp, &line_no)) {
+    while ((entry = read_next_policy_entry(fp, &line_no)) && !found) {
         if (strcmp(entry->preferred_name, name) == 0) {
             found = TRUE;
             res = fill_passwd(pwbuf, buf, buflen, entry, TRUE, errnop);
-            break;
-        }
-        if (strcmp(entry->unique_name, name) == 0) {
+        } else if (strcmp(entry->unique_name, name) == 0) {
             found = TRUE;
             res = fill_passwd(pwbuf, buf, buflen, entry, FALSE, errnop);
-            break;
         }
         free_rs_user(entry);
     }
@@ -146,11 +143,10 @@ enum nss_status _nss_rightscale_getpwuid_r(uid_t uid, struct passwd *pwbuf,
     }
     int found = FALSE;
     int line_no = 1;
-    while (entry = read_next_policy_entry(fp, &line_no)) {
+    while ((entry = read_next_policy_entry(fp, &line_no)) && !found) {
         if (entry->local_uid == uid) {
             found = TRUE;
             res = fill_passwd(pwbuf, buf, buflen, entry, TRUE, errnop);
-            break;
         }
 
         free_rs_user(entry);

@@ -50,6 +50,14 @@ AuthorizedKeysCommand /usr/local/bin/rs-ssh-keys
 AuthorizedKeysCommandUser nobody
 # ...
 
+5. All users belong to the "rightscale" group. Users marked with the
+   server_superuser privilege also belong to the "rightscale_sudo group". Add
+   this group to /etc/sudoers/90-rightscale-users
+# ...
+%rightscale_sudo ALL=NOPASSWD: ALL
+Defaults:%rightscale_sudo !requiretty
+# ...
+
 
 TEST
 ------------------
