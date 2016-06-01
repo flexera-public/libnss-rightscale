@@ -1,6 +1,6 @@
 #!/bin/bash -e
 # ---
-# RightScript Name: RL10 Test and Compile NSS
+# RightScript Name: RL10 Compile and Install NSS
 # Description: This is a sample script to compile/install the NSS plugin for RightScale.
 #   It is meant for dev/test and as a reference mainly.
 # Inputs:
