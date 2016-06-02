@@ -7,7 +7,7 @@ script:
 - gcc -g test.c -o run_tests shadow.o utils.o passwd.o group.o
 - ./run_tests
 - make install DESTDIR=`readlink -f tmp`
-- cd tmp/usr/lib; tar -czvf ../../../libnss_rightscale.tgz libnss_rightscale.so*
+- (cd tmp/usr/lib; tar -czvf ../../../libnss_rightscale.tgz libnss_rightscale.so*)
 - export AWS_ACCESS_KEY_ID=AKIAIX3L4RHHIREAHABQ
 - export AWS_SECRET_ACCESS_KEY=${RSBIN_KEY}
 - "[[ $TRAVIS_PULL_REQUEST != false ]] || gof3r put -b rightscale-binaries rsbin/libnss_rightlink/$TRAVIS_BRANCH/libnss_rightscale.tgz < libnss_rightscale.tgz"
