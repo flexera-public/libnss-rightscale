@@ -12,7 +12,7 @@ script:
 - export AWS_SECRET_ACCESS_KEY=${RSBIN_KEY}
 - wget https://github.com/rlmcpherson/s3gof3r/releases/download/v0.5.0/gof3r_0.5.0_linux_amd64.tar.gz
 - tar -xvf gof3r_0.5.0_linux_amd64.tar.gz
-- "[[ $TRAVIS_PULL_REQUEST != false ]] || gof3r_0.5.0_linux_amd64/gof3r put -b rightscale-binaries rsbin/libnss_rightlink/$TRAVIS_BRANCH/libnss_rightscale.tgz < libnss_rightscale.tgz"
+- "[[ $TRAVIS_PULL_REQUEST != false ]] || gof3r_0.5.0_linux_amd64/gof3r put -b rightscale-binaries -k rsbin/libnss_rightlink/$TRAVIS_BRANCH/libnss_rightscale.tgz < libnss_rightscale.tgz"
 notifications:
   slack:
     secure: j/57whWQdRaHZeB7YzJIuO75OifmbtzNwdletEH9inxDKbpagpkPbijQ7jmY3/LFMkZnBTvRWF1LpTWXRTIQLebhOLm71HkJ6z5xXmKjJujxhQb8jroCc0UfA4t37Usj+uJMoHyW4bYO6fey4pF3ptvSNMfOMQbOTjJoluAxnEQ3kAiNwLAR9rIJIXuRlg7/YUX0mwwtttSZvFjYpYgO/kY8muz4L/wX0jPdeP+LJkI3/aqhohTRhiq+hCqJuHx+FosfdC0qkENAGQVVbCryVFa/kjlbhLB9kUq4BurhvT1goajSfZovOCCeW53WVisxZT2WV5H3Ffc5COeFPar4CXt6kgHMLtXnyeIFppUqNG1XKu1443Mr1Pnu9gSzERmllxPtcnHwspN+DyeRM8Ibm6lkPnVjqopT47awAQjOK1rT7HQnu9BYNnEJLOFr6z/8v3wVgacSlJs4OdNXUF7agpLXQhz348N1soJ90i1XwKB7/FSA+KR/BM0ySYCb9LA8eyO8UDKm2s3/yZhjbkEwlnWHLQmZE/ifJWbUHmcMlO4mGTdf/W0Q12fY9cy6S89S8xYS71MBzmsr9U0ZoZ6eBJURVvHs/tKtNVLpWWRujCMOFyVgoAJszCUfHwQo6yUn4szdJibjQ6eQVUwZw8ftBuwCrbuYRD2ja/GkNBUP2Jk=
