@@ -133,8 +133,8 @@ enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
     }
     int name_length = strlen(name);
     total_length += name_length + 1;
-    int preferred_name_length = strlen(entry->preferred_name);
-    total_length += preferred_name_length + 7; // For pw_dir aka homedir
+    int unique_name_length = strlen(entry->unique_name);
+    total_length += unique_name_length + 7; // For pw_dir aka homedir
     int passwd_length = strlen(passwd);
     total_length += passwd_length + 1;
     int gecos_length = strlen(entry->gecos);
@@ -154,9 +154,9 @@ enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
     pwbuf->pw_name = buf;
     buf += name_length + 1;
 
-    sprintf(buf, "/home/%s", entry->preferred_name);
+    sprintf(buf, "/home/%s", entry->unique_name);
     pwbuf->pw_dir = buf;
-    buf += preferred_name_length + 7;
+    buf += unique_name_length + 7;
 
     strcpy(buf, passwd);
     pwbuf->pw_passwd = buf;
