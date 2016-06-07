@@ -62,35 +62,42 @@ enum nss_status populate_groups(struct group_data* rs_groups) {
     // Only superusers are also part of the rightscale_sudo group.
     while (entry = read_next_policy_entry(fp, &line_no)) {
         if (entry->superuser == TRUE) {
-            rs_groups->rightscale_sudo->gr_mem[num_superusers] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
-            rs_groups->rightscale_sudo->gr_mem[num_superusers+1] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
-            strcpy(rs_groups->rightscale_sudo->gr_mem[num_superusers], entry->preferred_name);
-            strcpy(rs_groups->rightscale_sudo->gr_mem[num_superusers+1], entry->unique_name);
-            num_superusers += 2;
+            if (strlen(entry->preferred_name) != 0) {
+                rs_groups->rightscale_sudo->gr_mem[num_superusers] =
+                    malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
+                strcpy(rs_groups->rightscale_sudo->gr_mem[num_superusers], entry->preferred_name);
+                num_superusers += 1;
+            }
+            rs_groups->rightscale_sudo->gr_mem[num_superusers] =
+                malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
+            strcpy(rs_groups->rightscale_sudo->gr_mem[num_superusers], entry->unique_name);
+            num_superusers += 1;
             if (num_superusers > (rs_sudo_size - 2)) {
                 rs_sudo_size *= 2;
                 rs_groups->rightscale_sudo->gr_mem = realloc(rs_groups->rightscale_sudo->gr_mem, rs_sudo_size * sizeof(char*));
             }
         }
-        rs_groups->rightscale->gr_mem[rs_groups->num_users] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
-        rs_groups->rightscale->gr_mem[rs_groups->num_users+1] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
-        strcpy(rs_groups->rightscale->gr_mem[rs_groups->num_users], entry->preferred_name);
-        strcpy(rs_groups->rightscale->gr_mem[rs_groups->num_users+1], entry->unique_name);
-
+        if (strlen(entry->preferred_name) != 0) {
+            rs_groups->rightscale->gr_mem[rs_groups->num_users] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
+            strcpy(rs_groups->rightscale->gr_mem[rs_groups->num_users], entry->preferred_name);
+            rs_groups->users[rs_groups->num_users] = malloc(sizeof(struct group));
+            rs_groups->users[rs_groups->num_users]->gr_name = rs_groups->rightscale->gr_mem[rs_groups->num_users];
+            rs_groups->users[rs_groups->num_users]->gr_passwd = "x";
+            rs_groups->users[rs_groups->num_users]->gr_gid = entry->local_uid;
+            rs_groups->users[rs_groups->num_users]->gr_mem = malloc(sizeof(char *));
+            rs_groups->users[rs_groups->num_users]->gr_mem[0] = NULL;
+            rs_groups->num_users += 1;
+        }
+        rs_groups->rightscale->gr_mem[rs_groups->num_users] = malloc(sizeof(char)*(strlen(entry->unique_name) + 1));
+        strcpy(rs_groups->rightscale->gr_mem[rs_groups->num_users], entry->unique_name);
         rs_groups->users[rs_groups->num_users] = malloc(sizeof(struct group));
         rs_groups->users[rs_groups->num_users]->gr_name = rs_groups->rightscale->gr_mem[rs_groups->num_users];
         rs_groups->users[rs_groups->num_users]->gr_passwd = "x";
         rs_groups->users[rs_groups->num_users]->gr_gid = entry->local_uid;
         rs_groups->users[rs_groups->num_users]->gr_mem = malloc(sizeof(char *));
         rs_groups->users[rs_groups->num_users]->gr_mem[0] = NULL;
-        rs_groups->users[rs_groups->num_users+1] = malloc(sizeof(struct group));
-        rs_groups->users[rs_groups->num_users+1]->gr_name = rs_groups->rightscale->gr_mem[rs_groups->num_users+1];
-        rs_groups->users[rs_groups->num_users+1]->gr_passwd = "x";
-        rs_groups->users[rs_groups->num_users+1]->gr_gid = entry->local_uid;
-        rs_groups->users[rs_groups->num_users+1]->gr_mem = malloc(sizeof(char *));
-        rs_groups->users[rs_groups->num_users+1]->gr_mem[0] = NULL;
+        rs_groups->num_users += 1;
 
-        rs_groups->num_users += 2;
         if (rs_groups->num_users > (rs_size - 2)) {
             rs_size *= 2;
             rs_groups->rightscale->gr_mem = realloc(rs_groups->rightscale->gr_mem, rs_size * sizeof(char*));

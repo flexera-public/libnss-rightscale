@@ -126,7 +126,7 @@ enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
 
     int total_length = 0;
 
-    if (use_preferred == TRUE) {
+    if (use_preferred == TRUE && strlen(entry->preferred_name) > 0) {
         name = entry->preferred_name;
     } else {
         name = entry->unique_name;
@@ -188,7 +188,7 @@ enum nss_status fill_spwd(struct spwd* spbuf, char* buf, size_t buflen,
     char *passwd = "*";
     int total_length = 0;
 
-    if (use_preferred == TRUE) {
+    if (use_preferred == TRUE && strlen(entry->preferred_name) > 0) {
         name = entry->preferred_name;
     } else {
         name = entry->unique_name;

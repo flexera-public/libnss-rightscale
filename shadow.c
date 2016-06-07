@@ -89,9 +89,13 @@ enum nss_status _nss_rightscale_getspent_r(struct spwd *spbuf, char *buf,
     }
 
     int use_preferred = TRUE;
+    if (strlen(entry->preferred_name) == 0) {
+        spent_data.entry_seen_count = 1;
+    }
     if (spent_data.entry_seen_count == 1) {
         use_preferred = FALSE;
     }
+
     res = fill_spwd(spbuf, buf, buflen, entry, use_preferred, errnop);
     free_rs_user(entry);
     // Rewind and re-read the current entry
@@ -129,12 +133,11 @@ enum nss_status _nss_rightscale_getspnam_r(const char* name, struct spwd *spbuf,
     int found = FALSE;
     int line_no = 1;
     while (entry = read_next_policy_entry(fp, &line_no)) {
-        if (strcmp(entry->preferred_name, name) == 0) {
+        if (strcmp(entry->preferred_name, name) == 0 && strlen(entry->preferred_name) != 0) {
             found = TRUE;
             res = fill_spwd(spbuf, buf, buflen, entry, TRUE, errnop);
             break;
-        }
-        if (strcmp(entry->unique_name, name) == 0) {
+        } else if (strcmp(entry->unique_name, name) == 0) {
             found = TRUE;
             res = fill_spwd(spbuf, buf, buflen, entry, FALSE, errnop);
             break;

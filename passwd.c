@@ -72,9 +72,13 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf, size
     }
 
     int use_preferred = TRUE;
+    if (strlen(entry->preferred_name) == 0) {
+        pwent_data.entry_seen_count = 1;
+    }
     if (pwent_data.entry_seen_count == 1) {
         use_preferred = FALSE;
-    }
+    } 
+
     res = fill_passwd(pwbuf, buf, buflen, entry, use_preferred, errnop);
     free_rs_user(entry);
     // Rewind and re-read the current entry
@@ -85,7 +89,7 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf, size
         if (pwent_data.entry_seen_count == 0) {
             pwent_data.line_no = previous_line_no;
             fsetpos(pwent_data.fp, &previous_pos);
-            pwent_data.entry_seen_count += 1;
+            pwent_data.entry_seen_count = 1;
         } else {
             pwent_data.entry_seen_count = 0;
         }
@@ -110,7 +114,7 @@ enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbu
     int found = FALSE;
     int line_no = 1;
     while ((entry = read_next_policy_entry(fp, &line_no)) && !found) {
-        if (strcmp(entry->preferred_name, name) == 0) {
+        if (strcmp(entry->preferred_name, name) == 0 && strlen(entry->preferred_name) != 0) {
             found = TRUE;
             res = fill_passwd(pwbuf, buf, buflen, entry, TRUE, errnop);
         } else if (strcmp(entry->unique_name, name) == 0) {

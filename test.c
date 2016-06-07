@@ -314,7 +314,9 @@ static void nss_test_users(void) {
   struct passwd *pwd;
 
   nss_setpwent();
+  int user_count = 0;
   while ((pwd = nss_getpwent())) {
+    user_count++;
     printf("Testing user %s\n", pwd->pw_name);
     printf("  getpwent:   "); print_passwd(pwd);
     pwd = nss_getpwuid(pwd->pw_uid);
@@ -333,6 +335,11 @@ static void nss_test_users(void) {
     printf("  getpwnam:   "); print_passwd(pwd);
     printf("\n");
   }
+  printf("User count: %d\n\n", user_count);
+  if (user_count != 7) {
+    total_errors++;
+    printf("ERROR: users not equal to 7\n");
+  }
   nss_endpwent();
 }
 
@@ -341,7 +348,9 @@ static void nss_test_shadow(void) {
   struct spwd *pwd;
 
   nss_setspent();
+  int user_count = 0;
   while ((pwd = nss_getspent())) {
+    user_count++;
     printf("Testing shadow %s\n", pwd->sp_namp);
     printf("  getspent:   "); print_spwd(pwd);
     pwd = nss_getspnam(pwd->sp_namp);
@@ -352,6 +361,11 @@ static void nss_test_shadow(void) {
     }
     printf("  getspnam:   "); print_spwd(pwd);
     printf("\n");
+  }
+  printf("Shadow count: %d\n\n", user_count);
+  if (user_count != 7) {
+    total_errors++;
+    printf("ERROR: shadow users not equal to 7\n");
   }
   nss_endspent();
 }
@@ -418,8 +432,10 @@ static void nss_test_groups(void) {
   struct group *grp;
 
   nss_setgrent();
+  int group_count = 0;
   /* loop over all groups */
   while ((grp = nss_getgrent())) {
+    group_count++;
     printf("Testing group %s\n", grp->gr_name);
     printf("  getgrent: "); print_group(grp);
     grp = nss_getgrnam(grp->gr_name);
@@ -436,7 +452,32 @@ static void nss_test_groups(void) {
       continue;
     }
     printf("  getgrgid: "); print_group(grp);
+
+    if (strcmp(grp->gr_name, "rightscale") == 0) {
+      int mem_cnt = 0;
+      while(grp->gr_mem[mem_cnt]) mem_cnt++;
+      printf("  members: %d\n", mem_cnt);
+      if (mem_cnt != 7) {
+        total_errors++;
+        printf("ERROR: rightscale member_count should be 7\nb");
+      }
+    }
+    if (strcmp(grp->gr_name, "rightscale_sudo") == 0) {
+      int mem_cnt = 0;
+      while(grp->gr_mem[mem_cnt]) mem_cnt++;
+      printf("  members: %d\n", mem_cnt);
+      if (mem_cnt != 3) {
+        total_errors++;
+        printf("ERROR: rightscale_sudo member_count should be 3\n");
+      }
+    }
     printf("\n");
+  }
+  printf("Group count: %d\n\n", group_count);
+
+  if (group_count != 9) {
+    total_errors++;
+    printf("ERROR: groups not equal to 9 (7 users + rightscale + rightscale_sudo)\n");
   }
   nss_endgrent();
 }
