@@ -336,9 +336,9 @@ static void nss_test_users(void) {
     printf("\n");
   }
   printf("User count: %d\n\n", user_count);
-  if (user_count != 7) {
+  if (user_count != 8) {
     total_errors++;
-    printf("ERROR: users not equal to 7\n");
+    printf("ERROR: user count not equal to 8\n");
   }
   nss_endpwent();
 }
@@ -363,9 +363,9 @@ static void nss_test_shadow(void) {
     printf("\n");
   }
   printf("Shadow count: %d\n\n", user_count);
-  if (user_count != 7) {
+  if (user_count != 8) {
     total_errors++;
-    printf("ERROR: shadow users not equal to 7\n");
+    printf("ERROR: shadow count not equal to 8\n");
   }
   nss_endspent();
 }
@@ -457,9 +457,9 @@ static void nss_test_groups(void) {
       int mem_cnt = 0;
       while(grp->gr_mem[mem_cnt]) mem_cnt++;
       printf("  members: %d\n", mem_cnt);
-      if (mem_cnt != 7) {
+      if (mem_cnt != 8) {
         total_errors++;
-        printf("ERROR: rightscale member_count should be 7\nb");
+        printf("ERROR: rightscale member_count should be 8\nb");
       }
     }
     if (strcmp(grp->gr_name, "rightscale_sudo") == 0) {
@@ -475,9 +475,9 @@ static void nss_test_groups(void) {
   }
   printf("Group count: %d\n\n", group_count);
 
-  if (group_count != 9) {
+  if (group_count != 10) {
     total_errors++;
-    printf("ERROR: groups not equal to 9 (7 users + rightscale + rightscale_sudo)\n");
+    printf("ERROR: groups not equal to 10 (8 user entries + rightscale + rightscale_sudo)\n");
   }
   nss_endgrent();
 }

@@ -62,7 +62,7 @@ enum nss_status populate_groups(struct group_data* rs_groups) {
     // Only superusers are also part of the rightscale_sudo group.
     while (entry = read_next_policy_entry(fp, &line_no)) {
         if (entry->superuser == TRUE) {
-            if (strlen(entry->preferred_name) != 0) {
+            if (strlen(entry->preferred_name) != 0 && strcmp(entry->preferred_name, entry->unique_name) != 0) {
                 rs_groups->rightscale_sudo->gr_mem[num_superusers] =
                     malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
                 strcpy(rs_groups->rightscale_sudo->gr_mem[num_superusers], entry->preferred_name);
@@ -77,7 +77,7 @@ enum nss_status populate_groups(struct group_data* rs_groups) {
                 rs_groups->rightscale_sudo->gr_mem = realloc(rs_groups->rightscale_sudo->gr_mem, rs_sudo_size * sizeof(char*));
             }
         }
-        if (strlen(entry->preferred_name) != 0) {
+        if (strlen(entry->preferred_name) != 0 && strcmp(entry->preferred_name, entry->unique_name) != 0) {
             rs_groups->rightscale->gr_mem[rs_groups->num_users] = malloc(sizeof(char)*(strlen(entry->preferred_name) + 1));
             strcpy(rs_groups->rightscale->gr_mem[rs_groups->num_users], entry->preferred_name);
             rs_groups->users[rs_groups->num_users] = malloc(sizeof(struct group));
