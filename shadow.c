@@ -79,7 +79,7 @@ enum nss_status _nss_rightscale_getspent_r(struct spwd *spbuf, char *buf,
     int previous_line_no = spent_data.line_no;
     fpos_t previous_pos;
     fgetpos(spent_data.fp, &previous_pos);
-    struct rs_user* entry;
+    struct rs_user *entry;
 
     entry = read_next_policy_entry(spent_data.fp, &spent_data.line_no);
 
@@ -118,10 +118,10 @@ enum nss_status _nss_rightscale_getspent_r(struct spwd *spbuf, char *buf,
 /**
  * Get shadow info by username.
  */
-enum nss_status _nss_rightscale_getspnam_r(const char* name, struct spwd *spbuf,
+enum nss_status _nss_rightscale_getspnam_r(const char *name, struct spwd *spbuf,
             char *buf, size_t buflen, int *errnop) {
     int res;
-    struct rs_user* entry;
+    struct rs_user *entry;
 
     NSS_DEBUG("rightscale getspnam_r: Looking for user %s\n", name);
 

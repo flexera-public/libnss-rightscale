@@ -41,7 +41,7 @@ FILE* open_policy_file() {
  * Valid policy entry line is:
  * preferred_name:unique_name:rs_uid:local_uid:superuser:gecos:public_key1:public_key2:..."
  */ 
-struct rs_user* read_next_policy_entry(FILE* fp, int* line_no) {
+struct rs_user * read_next_policy_entry(FILE* fp, int* line_no) {
     char rawentry[BUF_SIZE];
     char *name, *gecos, *unique_name, *preferred_name;
     uid_t rs_uid = 0;
@@ -86,7 +86,7 @@ struct rs_user* read_next_policy_entry(FILE* fp, int* line_no) {
         }
     }
 
-    struct rs_user* entry = malloc(sizeof(struct rs_user));
+    struct rs_user *entry = malloc(sizeof(struct rs_user));
 
     entry->preferred_name = malloc(sizeof(char)*(strlen(preferred_name) + 1));
     strcpy(entry->preferred_name, preferred_name);
@@ -118,8 +118,8 @@ void close_policy_file(FILE* fp) {
  * @param use_preferred Boolean -- whether to fill the name with preferred or unique name.
  * @param errnop Pointer to errno, will be filled if something goes wrong.
  */
-enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
-    struct rs_user* entry, int use_preferred, int* errnop) {
+enum nss_status fill_passwd(struct passwd *pwbuf, char *buf, size_t buflen,
+    struct rs_user *entry, int use_preferred, int *errnop) {
     char *passwd = "x";
     char *shell = "/bin/bash";
     char *name;
@@ -182,8 +182,8 @@ enum nss_status fill_passwd(struct passwd* pwbuf, char* buf, size_t buflen,
  * @param use_preferred Boolean -- whether to fill the name with preferred or unique name.
  * @param errnop Pointer to errno, will be filled if something goes wrong.
  */
-enum nss_status fill_spwd(struct spwd* spbuf, char* buf, size_t buflen,
-    struct rs_user* entry, int use_preferred, int* errnop) {
+enum nss_status fill_spwd(struct spwd *spbuf, char *buf, size_t buflen,
+    struct rs_user *entry, int use_preferred, int *errnop) {
     char *name;
     char *passwd = "*";
     int total_length = 0;
@@ -226,14 +226,14 @@ enum nss_status fill_spwd(struct spwd* spbuf, char* buf, size_t buflen,
     return NSS_STATUS_SUCCESS;
 }
 
-void free_rs_user(struct rs_user* entry) {
+void free_rs_user(struct rs_user *entry) {
     free(entry->preferred_name);
     free(entry->unique_name);
     free(entry->gecos);
     free(entry);
 }
 
-void print_rs_user(struct rs_user* entry) {
+void print_rs_user(struct rs_user *entry) {
     NSS_DEBUG("rs_user (%p) preferred_name %s unique_name %s gecos %s rs_uid %d local_uid %d\n",
         entry, entry->preferred_name, entry->unique_name, entry->gecos, entry->rs_uid, entry->local_uid);
 }
@@ -247,8 +247,8 @@ void print_rs_user(struct rs_user* entry) {
  * @param entry Source struct populated from policy file.
  * @param errnop Pointer to errno, will be filled if something goes wrong.
  */
-enum nss_status fill_group(struct group* grbuf, char* buf, size_t buflen,
-    struct group* entry, int* errnop) {
+enum nss_status fill_group(struct group *grbuf, char *buf, size_t buflen,
+    struct group *entry, int *errnop) {
 
     int total_length = 0;
 
@@ -268,8 +268,8 @@ enum nss_status fill_group(struct group* grbuf, char* buf, size_t buflen,
     /* Calculate number of extra bytes needed to align on pointer size boundry */
     /* Should always be 0 */
     int offset = 0;
-    if ((offset = (unsigned long)(buf) % sizeof(char*)) != 0)
-        offset = sizeof(char*) - offset;
+    if ((offset = (unsigned long)(buf) % sizeof(char *)) != 0)
+        offset = sizeof(char *) - offset;
     total_length += offset;
 
     // The pointers to group members are in buf also!. The array is null terminated, hence the + 1

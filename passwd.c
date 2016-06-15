@@ -62,7 +62,7 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf, size
     int previous_line_no = pwent_data.line_no;
     fpos_t previous_pos;
     fgetpos(pwent_data.fp, &previous_pos);
-    struct rs_user* entry;
+    struct rs_user *entry;
 
     entry = read_next_policy_entry(pwent_data.fp, &pwent_data.line_no);
 
@@ -99,10 +99,10 @@ enum nss_status _nss_rightscale_getpwent_r(struct passwd *pwbuf, char *buf, size
 }
 
 /* Get user info by username. */
-enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbuf,
+enum nss_status _nss_rightscale_getpwnam_r(const char *name, struct passwd *pwbuf,
             char *buf, size_t buflen, int *errnop) {
     enum nss_status res;
-    struct rs_user* entry;
+    struct rs_user *entry;
 
     NSS_DEBUG("rightscale getpwnam_r: Looking for user %s\n", name);
 
@@ -140,7 +140,7 @@ enum nss_status _nss_rightscale_getpwnam_r(const char* name, struct passwd *pwbu
 enum nss_status _nss_rightscale_getpwuid_r(uid_t uid, struct passwd *pwbuf,
                char *buf, size_t buflen, int *errnop) {
     enum nss_status res;
-    struct rs_user* entry;
+    struct rs_user *entry;
 
     NSS_DEBUG("rightscale getpwuid_r: Looking for uid %d\n", uid);
 
