@@ -6,7 +6,7 @@
 # Inputs:
 #   BRANCH:
 #     Category: Application
-#     Description: Branch of libnss-rightlink to test
+#     Description: Branch of libnss-rightscale to test
 #     Input Type: single
 #     Required: true
 #     Advanced: false
@@ -26,11 +26,11 @@ else
 fi
 
 cd ~
-echo "Cloning NSS to $HOME/libnss-rightlink"
-if [[ ! -e libnss-rightlink ]]; then 
-  git clone http://github.com/rightscale/libnss-rightlink
+echo "Cloning NSS to $HOME/libnss-rightscale"
+if [[ ! -e libnss-rightscale ]]; then 
+  git clone http://github.com/rightscale/libnss-rightscale
 fi
-cd libnss-rightlink
+cd libnss-rightscale
 git checkout -f $BRANCH
 
 if [[ ! -e Makefile ]]; then

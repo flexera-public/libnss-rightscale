@@ -1,4 +1,4 @@
-libnss-socket (0.1+gnoll3) lenny; urgency=low
+libnss-rightscale (0.1+gnoll3) lenny; urgency=low
 
   * Initial build
 
