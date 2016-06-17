@@ -1,6 +1,6 @@
-The Debian Package libnss-socket
+The Debian Package libnss-rightscale
 ----------------------------
 
-Comments regarding the Package
+Initial release
 
- -- Sébastien Le Ray <sebastien-socket@orniz.org>  Mon, 08 Dec 2008 17:24:32 +0100
+ -- Peter Schroeter <peter.schroeter@rightscale.com>  Thur, 12 May 2016 00:53:50 +0300

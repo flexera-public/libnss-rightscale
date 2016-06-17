@@ -1,15 +1,15 @@
-Source: libnss-socket
+Source: libnss-rightscale
 Section: admin
 Priority: optional
-Maintainer: Gleb Golubitsky <sectoid@gnolltech.org>
+Maintainer: Peter Schroeter <peter.schroeter@rightscale.com>
 Build-Depends: debhelper (>= 7), autotools-dev
 Standards-Version: 3.8.0
-Homepage: http://libnss-socket.tuxfamily.org
+Homepage: http://github.com/rightscale/libnss-rightscale
 
-Package: libnss-socket
+Package: libnss-rightscale
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Description: NSS module for SQLite
+Description: NSS module for RightScale
  This package provides a Name Service Switch module that allows you
- to store users in a SQLite databased.
+ to authenticate users defined in the RightScale platform
 

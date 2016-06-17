@@ -1,15 +1,25 @@
-libnss-socket
-=============
+Installation Instructions
+*************************
 
- 1. Prerequisites
-------------------
+Basic Installation
+==================
 
- 2. Installation
------------------
+   Briefly, the shell command `./configure && make && sudo make install'
+should configure, build, and install this package. `sudo make uninstall` to 
+remove this package.See README for further details. 
 
- 3. Configuration
-------------------
 
- 4. Get more information
--------------------------
+Compilers and Options
+=====================
 
+     ./configure --enable-debug to compile with DEBUG set, which prints lots
+of messages to stdout.
+
+   *Note Defining Variables::, for more details.
+
+
+Installation Names
+==================
+
+   By default, `make install' installs the package's modules under
+`/usr/lib', which consists of /usr/lib/libnss_rightscale.so.2.0.x
