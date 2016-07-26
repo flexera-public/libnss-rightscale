@@ -79,7 +79,7 @@ struct rs_user * read_next_policy_entry(FILE* fp, int* line_no) {
         gecos = strsep(&rawentryp, delimiters);
 
         if (preferred_name != NULL && unique_name != NULL && gecos != NULL &&
-            superuser != -1 && rs_uid > 500 && local_uid > 500) {
+            superuser != -1 && rs_uid > 0 && local_uid > 500) {
             entry_valid = TRUE;
         } else {
             NSS_DEBUG("%s:%d: Invalid format\n", POLICY_FILE, *line_no - 1);
